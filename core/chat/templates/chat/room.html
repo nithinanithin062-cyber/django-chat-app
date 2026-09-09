@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Join Chat</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #075e54, #128c7e);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            width: 300px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        h2 {
+            margin-bottom: 20px;
+            color: #075e54;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: #075e54;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #075e54;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background: #0b7d6b;
+        }
+
+        .footer {
+            margin-top: 15px;
+            font-size: 12px;
+            color: gray;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+    <h2>💬 Join Chat Room</h2>
+
+    <input id="username" type="text" placeholder="Enter your name">
+    <input id="room-name" type="text" placeholder="Enter room name">
+
+    <button onclick="joinRoom()">Join Room</button>
+
+    <div class="footer">
+        Real-time chat using Django Channels 🚀
+    </div>
+</div>
+
+<script>
+function joinRoom() {
+    const username = document.getElementById("username").value;
+    const roomName = document.getElementById("room-name").value;
+
+    if (!username || !roomName) {
+        alert("Please fill all fields");
+        return;
+    }
+
+    // Save username in browser
+    localStorage.setItem("username", username);
+
+    // Redirect to chat
+    window.location.href = "/" + roomName + "/";
+}
+</script>
+
+</body>
+</html>

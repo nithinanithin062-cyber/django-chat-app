@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat Room</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #ece5dd;
+        }
+
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .chat-header {
+            background: #075e54;
+            color: white;
+            padding: 15px;
+            font-size: 18px;
+        }
+
+        .chat-box {
+            flex: 1;
+            padding: 10px;
+            overflow-y: auto;
+        }
+
+        .message {
+            margin: 8px 0;
+            max-width: 60%;
+            padding: 10px;
+            border-radius: 10px;
+            clear: both;
+        }
+
+        .sent {
+            background: #dcf8c6;
+            float: right;
+        }
+
+        .received {
+            background: white;
+            float: left;
+        }
+
+        .system {
+            text-align: center;
+            color: gray;
+            font-size: 12px;
+            margin: 5px;
+        }
+
+        .typing {
+            font-size: 12px;
+            color: gray;
+            margin-left: 10px;
+        }
+
+        .chat-input {
+            display: flex;
+            padding: 10px;
+            background: #f0f0f0;
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 10px;
+            margin-right: 10px;
+        }
+
+        .chat-input button {
+            padding: 10px 15px;
+            background: #075e54;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .username-box {
+            padding: 10px;
+            background: #ddd;
+        }
+
+        small {
+            color: gray;
+            font-size: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="chat-container">
+
+    <div class="chat-header">
+        Room: {{ room_name }}
+    </div>
+
+    <div id="chat-log" class="chat-box">
+
+        {% for msg in messages %}
+        <div class="message received">
+            <b>{{ msg.username }}</b><br>
+            {{ msg.content }}
+        </div>
+        {% endfor %}
+
+    </div>
+
+    <div id="typing-indicator" class="typing"></div>
+
+    <div class="username-box">
+        <input id="username" type="text" placeholder="Enter your name">
+    </div>
+
+    <div class="chat-input">
+        <input id="chat-message-input" type="text" placeholder="Type a message">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+</div>
+
+{{ room_name|json_script:"room-name" }}
+
+<script>
+const roomName = JSON.parse(document.getElementById('room-name').textContent);
+
+const chatSocket = new WebSocket(
+    'ws://' + window.location.host + '/ws/chat/' + roomName + '/'
+);
+
+const typingBox = document.getElementById("typing-indicator");
+
+// 🔥 Receive messages
+chatSocket.onmessage = function(e) {
+    const data = JSON.parse(e.data);
+    const log = document.getElementById('chat-log');
+    const username = document.getElementById('username').value;
+
+    // ✅ Chat message
+    if (data.type === "chat") {
+        let align = (data.username === username) ? "sent" : "received";
+
+        log.innerHTML += `
+            <div class="message ${align}">
+                <b>${data.username}</b> <small>${data.time}</small><br>
+                ${data.message}
+            </div>
+        `;
+    }
+
+    // 🔔 System messages
+    else if (data.type === "system") {
+        log.innerHTML += `<div class="system">${data.message}</div>`;
+    }
+
+    // ✍️ Typing indicator
+    else if (data.type === "typing") {
+        typingBox.innerText = `${data.username} is typing...`;
+
+        setTimeout(() => {
+            typingBox.innerText = "";
+        }, 1000);
+    }
+
+    log.scrollTop = log.scrollHeight;
+};
+
+// ❌ Close
+chatSocket.onclose = function(e) {
+    console.error('WebSocket closed');
+};
+
+// 📤 Send message
+function sendMessage() {
+    const input = document.getElementById('chat-message-input');
+    const username = document.getElementById('username').value;
+    const message = input.value;
+
+    if (!username) {
+        alert("Enter username");
+        return;
+    }
+
+    if (!message) return;
+
+    chatSocket.send(JSON.stringify({
+        'message': message,
+        'username': username
+    }));
+
+    input.value = '';
+}
+
+// ⌨️ Enter key
+document.getElementById("chat-message-input")
+.addEventListener("keyup", function(event) {
+    if (event.key === "Enter") {
+        sendMessage();
+    }
+});
+
+// ✍️ Typing event
+let typingTimeout;
+
+document.getElementById("chat-message-input").addEventListener("input", () => {
+    chatSocket.send(JSON.stringify({
+        'type': 'typing',
+        'username': document.getElementById('username').value
+    }));
+
+    clearTimeout(typingTimeout);
+    typingTimeout = setTimeout(() => {
+        typingBox.innerText = "";
+    }, 1000);
+});
+</script>
+
+</body>
+</html>
